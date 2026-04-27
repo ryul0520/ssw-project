@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SSW Trajectory Simulator</title>
+
+<style>
+body {
+    margin: 0;
+    background: #0b0f1a;
+    color: white;
+    font-family: Arial;
+}
+
+#ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.6);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+input, select, button {
+    margin: 5px 0;
+    width: 100%;
+    padding: 5px;
+}
+
+button {
+    background: #3399ff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+    <h3>SSW Simulator</h3>
+
+    <label>Pitch Type</label>
+    <select id="pitch_type">
+        <option value="FF">FF</option>
+        <option value="SI">SI</option>
+        <option value="SL">SL</option>
+        <option value="CH">CH</option>
+    </select>
+
+    <label>Velocity</label>
+    <input id="speed" value="90">
+
+    <label>Spin Rate</label>
+    <input id="spin" value="2200">
+
+    <label>Spin Axis</label>
+    <input id="axis" value="220">
+
+    <label>Release X</label>
+    <input id="posx" value="-1.5">
+
+    <label>Release Z</label>
+    <input id="posz" value="6">
+
+    <label>pfx_x</label>
+    <input id="pfx_x" value="-1.2">
+
+    <label>pfx_z</label>
+    <input id="pfx_z" value="0.8">
+
+    <button onclick="runSimulation()">Run</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.155/build/three.min.js"></script>
+
+<script>
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer({antialias:true});
+
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+camera.position.set(0, 5, 15);
+
+let light = new THREE.PointLight(0xffffff, 1);
+light.position.set(10,10,10);
+scene.add(light);
+
+function clearScene() {
+    while(scene.children.length > 0){ 
+        scene.remove(scene.children[0]); 
+    }
+    scene.add(light);
+}
+
+function createLine(points, color) {
+    let material = new THREE.LineBasicMaterial({ color: color });
+    let geometry = new THREE.BufferGeometry().setFromPoints(points);
+    return new THREE.Line(geometry, material);
+}
+
+function drawTrajectory(data, color) {
+    let points = data.map(p => new THREE.Vector3(p[0], p[1], -p[2]));
+    let line = createLine(points, color);
+    scene.add(line);
+}
+
+async function runSimulation() {
+
+    clearScene();
+
+    let payload = {
+        pitch_type: document.getElementById("pitch_type").value,
+        release_speed: parseFloat(document.getElementById("speed").value),
+        release_spin_rate: parseFloat(document.getElementById("spin").value),
+        spin_axis: parseFloat(document.getElementById("axis").value),
+        release_pos_x: parseFloat(document.getElementById("posx").value),
+        release_pos_z: parseFloat(document.getElementById("posz").value),
+        pfx_x: parseFloat(document.getElementById("pfx_x").value),
+        pfx_z: parseFloat(document.getElementById("pfx_z").value)
+    };
+
+    let res = await fetch("https://ssw-project.onrender.com/predict", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    });
+
+    let data = await res.json();
+
+    drawTrajectory(data.no_ssw, 0x3399ff);
+    drawTrajectory(data.with_ssw, 0xff3333);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+animate();
+</script>
+
+</body>
+</html>

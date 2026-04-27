@@ -4,9 +4,24 @@ import pandas as pd
 import numpy as np
 from flask_cors import CORS
 
+import __main__  # [추가 1] 이것을 꼭 임포트 해야 합니다.
+
 app = Flask(__name__)
 CORS(app)
 
+# =====================================================================
+# [추가 2] 모델 학습 시 사용했던 apply_weight 함수를 아래에 그대로 복사해 넣으세요!
+# (아래 내용은 예시일 뿐입니다. 원래 노트북 파일에 있던 코드를 넣으세요.)
+def apply_weight(x):
+    # [여기에 내용 채우기]
+    return x 
+# =====================================================================
+
+# [추가 3] pkl 파일이 이 함수를 인식할 수 있도록 강제로 연결해 줍니다.
+setattr(__main__, 'apply_weight', apply_weight)
+
+
+# [중요] 반드시 위에서 apply_weight를 정의하고 세팅한 후에 pkl을 불러와야 합니다!
 package = joblib.load('full_ssw_package.pkl')
 magnus_models = package['magnus_models']
 

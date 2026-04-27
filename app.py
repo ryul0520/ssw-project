@@ -1,3 +1,7 @@
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+    
 from flask import Flask, request, jsonify
 import joblib
 import pandas as pd
